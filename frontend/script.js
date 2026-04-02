@@ -1,0 +1,485 @@
+const API_URL = "http://localhost:3000";
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  checkAdminSetup();
+});
+
+function checkAdminSetup() {
+  fetch(`${API_URL}/check-admin`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.adminExists) {
+        // SHOW button if no admin
+        document.getElementById("setupAdminBtn").style.display = "block";
+      }
+    })
+    .catch(err => console.log(err));
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "N/A";
+
+  const date = new Date(dateString);
+  return date.toLocaleDateString();
+}
+
+let token = "";
+let selectedEmail = "";
+
+
+// Trigger search while typing
+document.getElementById("loanSearch").addEventListener("input", function () {
+  const query = this.value;
+
+  if (query.length < 2) return;
+
+  fetch(`${API_URL}/customers/search?q=${query}`, {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    const list = document.getElementById("searchResults");
+    list.innerHTML = "";
+
+    data.forEach(user => {
+      const li = document.createElement("li");
+      li.textContent = `${user.name} (${user.email})`;
+
+      li.onclick = () => {
+        selectedEmail = user.email;
+        document.getElementById("loanSearch").value = user.email;
+        list.innerHTML = "";
+      };
+
+      list.appendChild(li);
+    });
+  });
+});
+
+document.addEventListener("click", (e) => {
+  if (!document.querySelector(".search-box").contains(e.target)) {
+    document.getElementById("searchResults").innerHTML = "";
+  }
+});
+
+// LOGIN
+function login() {
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const errorBox = document.getElementById("loginError");
+
+  const email = emailInput.value;
+  const password = passwordInput.value;
+
+  fetch(`${API_URL}/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ email, password })
+  })
+  .then(async res => {
+    const data = await res.json();
+
+    if (!res.ok) {
+      //  Show error under button
+      errorBox.textContent = data.message;
+
+      //  Clear only wrong field
+      if (data.field === "password") {
+        passwordInput.value = "";
+      } else if (data.field === "email") {
+        emailInput.value = "";
+      }
+
+      return;
+    }
+
+    // Clear error
+    errorBox.textContent = "";
+
+    // Save token
+    token = data.token;
+
+    localStorage.setItem("token", token);
+
+
+    document.getElementById("login").style.display = "none";
+
+  
+    const user = parseJwt(token);
+
+
+    document.getElementById("welcomeText").textContent = "Welcome " + user.name;
+
+    if (user.role === "admin") {
+      document.getElementById("adminPanel").style.display = "block";
+      document.getElementById("createAdminBtn").style.display ="block";
+    } else {
+      document.getElementById("welcomeUser").textContent = "Welcome " + user.name;
+      document.getElementById("customerPanel").style.display = "block";
+
+      const btn = document.getElementById("createAdminBtn");
+      if (btn) btn.style.display = "none";
+    }
+
+  })
+  .catch(err => {
+    console.log(err);
+    errorBox.textContent = "Server error";
+  });
+}
+
+
+function showRegister() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("register").style.display = "block";
+}
+
+
+function createUser() {
+  const name = document.getElementById("userName").value;
+  const email = document.getElementById("userEmail").value;
+  const password = document.getElementById("userPassword").value;
+  const phone = document.getElementById("userPhone").value;
+  const national_id = document.getElementById("userNationalId").value;
+
+  if (!name || !email || !password || !phone || !national_id) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  fetch(`${API_URL}/create-user`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify({
+      name,
+      email,
+      password,
+      phone,
+      national_id
+    })
+  })
+  .then(async res => {
+      const msg = await res.text();
+  
+    if (!res.ok) {
+      alert("Error: " + msg);
+      return;
+    }
+
+    alert(msg);
+    document.getElementById("userName").value = "";
+    document.getElementById("userEmail").value = "";
+    document.getElementById("userPassword").value = "";
+    document.getElementById("userPhone").value = "";
+    document.getElementById("userNationalId").value = "";
+
+    // switch UI
+    document.getElementById("register").style.display = "none";
+    document.getElementById("login").style.display = "block";
+
+    document.getElementById("email").focus();
+  });
+}
+
+function createAdmin() {
+  const name = prompt("Admin name");
+  const email = prompt("Admin email");
+  const password = prompt("Admin password");
+
+  console.log("TOKEN:", token);
+
+  fetch(`${API_URL}/create-admin`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": token ? "Bearer " + token : ""
+    },
+    body: JSON.stringify({ name, email, password })
+  })
+  .then(async res => {
+    const msg = await res.text();
+
+    if (!res.ok) {
+      alert("ERROR: " + msg);
+      return;
+    }
+
+    alert(msg);
+  })
+  .catch(err => {
+    console.log(err);
+    alert("Server error");
+  });
+}
+
+
+function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = atob(base64Url);
+    return JSON.parse(base64);
+}
+
+
+
+// LOAD CUSTOMERS
+function loadCustomers() {
+  fetch(`${API_URL}/customers`, {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    const list = document.getElementById("customerList");
+    list.innerHTML = "";
+
+    data.forEach(c => {
+      const li = document.createElement("li");
+      li.textContent = `${c.name} - ${c.phone}`;
+      list.appendChild(li);
+    });
+  });
+}
+
+
+
+function loadMyLoans() {
+  fetch(`${API_URL}/my-loans`, {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    const list = document.getElementById("loanList");
+    list.innerHTML = "";
+
+    const container = document.getElementById("myLoans");
+    container.innerHTML = "";
+
+    if (!Array.isArray(data) || data.length === 0) {
+
+      container.innerHTML = `
+        <div style="
+          padding: 15px;
+          border: 1px solid green;
+          width: 20%;
+          border-radius: 8px;
+          color: green;
+          background: #f0fff0;
+        ">
+          No loans yet
+        </div>
+      `;
+      return;
+    }
+
+    data.forEach(l => {
+      const div = document.createElement("div");
+
+      div.innerHTML = `<p>Balance: not Loaded</p>`;
+
+      const li = document.createElement("li");
+
+      // Loan info
+      const info = document.createElement("div");
+      info.textContent = `Loan Borrowed: ${l.amount} | Due: ${formatDate(l.due_date)}`;
+
+      // Balance display
+      const balanceText = document.createElement("p");
+      balanceText.textContent = "Balance: not loaded";
+
+      // Payment input
+      const input = document.createElement("input");
+      input.placeholder = "Enter payment amount";
+
+      // Payment button
+      const payBtn = document.createElement("button");
+      payBtn.textContent = "Pay";
+
+      const status = document.createElement("p");
+
+      fetch(`${API_URL}/loan-balance/${l.id}`)
+      .then(res => res.json())
+      .then(data => {
+        let paid = "";
+
+        if (data.balance <= 0) {
+          paid = `PAID (Tatal: ${data.total_owed})`;
+
+          status.textContent = `PAID (Tatal: ${data.total_owed})`;
+          status.style.color = "green";
+
+          input.style.display = "none";
+          payBtn.style.display = "none";
+        } else {
+          input.max = data.balance;
+        }
+   
+
+            div.innerHTML = `
+            <p><strong>Amount:</strong> ${l.amount}</p>
+            <p><strong>Interest:</strong> ${data.interest}</p>
+            <p><strong>Total owed:</strong> ${data.total_owed}</p>
+            <p><strong>Paid:</strong> ${data.paid} </p>
+            <p><strong>Remaining Balance:</strong> ${data.balance}</p>
+            <p><strong>Status:</strong> ${l.status}</p>
+            <p><strong>Borrowed On:</strong> ${formatDate(l.start_date)}</p>
+            <p><strong>Due Date:</strong> ${formatDate(l.due_date)}</p>
+            <p><strong>${paid}</strong></p>
+            <hr>`;
+
+          balanceText.textContent = `
+          Balance To Be Paid: ${data.balance}
+          `;
+
+      });
+
+      // Balance button
+      // const balanceBtn = document.createElement("button");
+      // balanceBtn.textContent = "View Balance";
+
+      // Connect actions
+      // balanceBtn.onclick = () => viewBalance(l.id, balanceText);
+      payBtn.onclick = () => makePayment(l.id, input, balanceText);
+
+      // Append everything
+      li.appendChild(info);
+      // li.appendChild(balanceBtn);
+      li.appendChild(balanceText);
+      li.appendChild(input);
+      li.appendChild(payBtn);
+      li.appendChild(status);
+      container.appendChild(div);
+
+      list.appendChild(li);
+    });
+  });
+}
+
+
+
+function makePayment(loanId, input, balanceElement) {
+  const amount = parseFloat(input.value);
+
+  if (!amount || amount <= 0) {
+    alert("ivalid amount");
+    return;
+  }
+  
+  if (input.max && amount > input.max) {
+    alert("Amount exceeds remaining balance");
+    return
+  }
+
+  fetch(`${API_URL}/payments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify({
+      loan_id: loanId,
+      amount: amount,
+    })
+  })
+  .then(res => res.text())
+  .then(msg => {
+    if(msg) {
+      alert("Amount payed successfully!")
+    }
+
+    loadMyLoans();
+
+    input.value = "";
+  })
+  .catch(err => console.log(err));
+}
+
+function createLoan() {
+  const email = selectedEmail;
+  const amount = document.getElementById("loanAmount").value;
+  const interest_rate = document.getElementById("interest").value;
+  const start_date = document.getElementById("startDate").value;
+  const due_date = document.getElementById("dueDate").value;
+
+  fetch(`${API_URL}/loans`, {
+    method: "POST", 
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify({
+      email, 
+      amount,
+      interest_rate,
+      start_date,
+      due_date
+    })
+  })
+  .then(res => res.text())
+  .then(msg => alert(msg))
+  .catch(err => console.log(err));
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("email").addEventListener("input", () => {
+    document.getElementById("loginError").textContent = "";
+  });
+
+  document.getElementById("password").addEventListener("input", () => {
+    document.getElementById("loginError").textContent = "";
+  });
+});
+
+
+function logout() {
+  token = null;
+
+  localStorage.removeItem("token");
+
+  document.getElementById("adminPanel").style.display = "none";
+  document.getElementById("customerPanel").style.display = "none";
+
+  document.getElementById("login").style.display = "block";
+
+  document.getElementById("email").value = "";
+  document.getElementById("password").value = "";
+
+  document.getElementById("welcomeText").textContent = "";
+  
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const savedToken = localStorage.getItem("token");
+
+  if (savedToken) {
+    token = savedToken;
+
+    const user = parseJwt(token);
+
+    // Hide login
+    document.getElementById("login").style.display = "none";
+
+    // Show welcome text
+    document.getElementById("welcomeText").textContent =
+      "Welcome " + user.name;
+
+    // Show correct panel
+    if (user.role === "admin") {
+      document.getElementById("adminPanel").style.display = "block";
+    } else {
+      document.getElementById("customerPanel").style.display = "block";
+    }
+  }
+
+});

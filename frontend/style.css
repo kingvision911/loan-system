@@ -1,0 +1,60 @@
+body {
+  font-family: Arial;
+  padding: 20px;
+  background: #f4f4f4;
+}
+
+input {
+  margin: 5px;
+  padding: 8px;
+}
+
+button {
+  padding: 8px 12px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+#dashboard {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.search-box {
+  position: relative;
+  width: 300px;
+}
+
+#searchResults {
+  position: absolute;
+  top: calc(100% - 1px); /* 👈 KEY FIX */
+  left: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid #ccc;
+  border-top: none; 
+  border-bottom: none;
+  max-height: 150px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  z-index: 1000;
+}
+
+#searchResults li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+#searchResults li:hover {
+  background: #f0f0f0;
+}
+
+#loanSearch {
+  border: 1px solid #ccc;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}

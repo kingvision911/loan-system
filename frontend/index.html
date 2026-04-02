@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Loan System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>Loan System</h1>
+
+  <!-- LOGIN -->
+  <div id="login">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Email"><br>
+    <input type="password" id="password" placeholder="Password"><br>
+    <button onclick="login()">Login</button>
+    <!-- Create account button -->
+    <button onclick="showRegister()">Create Account</button>
+    <p id="loginError" style="color: red; margin-top: 8px;"></p>
+  </div>
+  <div id="register" style="display:none;">
+    <input id="userName" placeholder="Name"><br>
+    <input id="userEmail" placeholder="Email"><br>
+    <input id="userPassword" placeholder="Password" type="password"><br>
+    <input id="userPhone" placeholder="Phone"><br>
+    <input id="userNationalId" placeholder="National ID"><br>
+    <button onclick="createUser()">Register</button>
+
+    <!-- set admin button -->
+     
+    <button id="setupAdminBtn" onclick="createAdmin()" style="display:none;">
+      Setup Admin Account
+    </button>
+    <!-- <button onclick="createAdmin()">Create Admin</button> -->
+  </div>
+
+
+<!-- Admin panel -->
+
+
+<div id="adminPanel" style="display: none;">
+    <h2>Admin Dashboard</h2>
+
+    <h3 id="welcomeText"></h3>
+    <button onclick="logout()">Logout</button>
+
+    <button onclick="loadCustomers()">Load Customers</button>
+    <button id="createAdminBtn" onclick="createAdmin()">Create Admin</button>
+
+    <ul id="customerList"></ul>
+
+    <h3>Create Loan</h3>
+  
+    <div class="search-box">
+      <input type="text" id="loanSearch" placeholder="Search customer by name or email">
+      <ul id="searchResults"></ul>
+    </div>
+
+    <input type="number" id="loanAmount" placeholder="Amount">
+    <input type="number" id="interest" placeholder="Interest %">
+    <input type="date" id="startDate">
+    <input type="date" id="dueDate">
+
+    <button onclick="createLoan()">Create Loan</button>
+</div>
+
+
+<!-- cusomers panel -->
+
+
+<div id="customerPanel" style="display: none;">
+    <h2>Customer Dashboard</h2>
+
+    <h3 id="welcomeUser"></h3>
+    <button onclick="logout()">Logout</button>
+
+    <!-- <p>Welcome! You can view your loans and payments.</p> -->
+
+    <button onclick="loadMyLoans()">View My Loans</button>
+    <div id="myLoans"></div>
+    <ul id="loanList"></ul>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
