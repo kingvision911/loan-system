@@ -35,8 +35,8 @@ function isAdmin(req, res, next) {
     next()
 }
 
-app.get("/", authenticateToken, (req, res) => {
-    res.send("Loan System API is running...");
+app.get("/", (req, res) => {
+    res.send("Loan System API is running 🚀");
 });
 
 
