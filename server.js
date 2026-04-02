@@ -20,7 +20,7 @@ function authenticateToken(req, res, next) {
 
     const token = authHeaders.split(" ")[1];
 
-    jwt.verify(token, "SECRET_KEY", (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) return res.status(403).send("Invalid token");
 
         req.user = user;
@@ -153,7 +153,7 @@ app.post("/create-admin", async (req, res) => {
 
             const token = authHeader.split(" ")[1];
 
-            jwt.verify(token, "SECRET_KEY", async (err, user) => {
+            jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
                 if (err) return res.status(403).send("Invalid token");
 
                 if (user.role !== "admin") {
@@ -201,14 +201,12 @@ app.post("/login", (req, res) => {
             return res.status(401).json({message: "Wrong password", field: "password" });
         }
 
-        const token = jwt.sign({ 
-            id: user.id,
-            role: user.role,
-            name: user.name
-        },            
-            "SECRET_KEY",
-            { expiresIn: "1d" }
-        );
+    const token = jwt.sign(
+        { id: user.id, role: user.role, name: user.name },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d"}
+    );
+
 
         res.json({ token });
     });
@@ -263,7 +261,7 @@ app.post("/loans", authenticateToken, isAdmin, (req, res) => {
 });
 
 
-app.get("/my-loans", (req, res) => {
+app.get("/my-loans", authenticateToken, (req, res) => {
     const userId = req.user.id;
 
     const sql = `
