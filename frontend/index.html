@@ -56,12 +56,24 @@
       <ul id="searchResults"></ul>
     </div>
 
-    <input type="number" id="loanAmount" placeholder="Amount">
-    <input type="number" id="interest" placeholder="Interest %">
+    <label for="loanAmount">Amount: </label>
+    <input type="number" id="loanAmount" placeholder="50000">
+
+    <label for="interest">Interest %: </label>
+    <input type="number" id="interest" placeholder="30">
+
+    <label for="Start Date">Start Date: </label>
     <input type="date" id="startDate">
+
+    <label for="dueDate">Due Date: </label>
     <input type="date" id="dueDate">
 
     <button onclick="createLoan()">Create Loan</button>
+
+    <button onclick="viewCustomerLoans()">View Customer History</button>
+    <button onclick="printReport()">Print Report</button>
+
+    <div id="customerLoans"></div>
 </div>
 
 

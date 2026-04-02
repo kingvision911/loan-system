@@ -288,6 +288,43 @@ app.get("/loans", (req, res) => {
 });
 
 
+app.get("/customer-loans/:email", authenticateToken, isAdmin, (req, res) => {
+    const email = req.params.email;
+
+    const sql = `
+        SELECT loans.*
+        FROM loans
+        JOIN customers ON loans.customer_id = customers.id
+        JOIN users ON customers.user_id = users.id
+        WHERE users.email = ?
+    `;
+
+    db.query(sql, [email], (err, result) => {
+        if (err) return res.status(500).send(err);
+        res.json(result);
+    });
+});
+
+
+
+app.get("/loan-payments/:loanId", authenticateToken, isAdmin, (req, res) => {
+  const loanId = req.params.loanId;
+
+  const sql = `
+    SELECT amount, payment_date
+    FROM payments
+    WHERE loan_id = ?
+    ORDER BY payment_date ASC
+  `;
+
+  db.query(sql, [loanId], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.json(result);
+  });
+});
+
+
+
 app.post("/payments", authenticateToken, (req, res) => {
     const { loan_id, amount } = req.body;
 

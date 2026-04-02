@@ -58,3 +58,25 @@ button {
   width: 100%;
   box-sizing: border-box;
 }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 40px;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+}
+
+th {
+  font-weight: bold;
+}
+
+tr {
+  border-bottom: 1px solid #ddd;
+}

@@ -371,6 +371,138 @@ function loadMyLoans() {
 
 
 
+
+async function viewCustomerLoans() {
+  if (!selectedEmail) {
+    alert("Please select a customer first");
+    return;
+  }
+
+  const res = await fetch(`${API_URL}/customer-loans/${selectedEmail}`, {
+    headers: { "Authorization": "Bearer " + token }
+  });
+
+  const loans = await res.json();
+
+  const container = document.getElementById("customerLoans");
+  container.innerHTML = "";
+
+  if (!Array.isArray(loans) || loans.length === 0) {
+    container.innerHTML = "<p>No records found</p>";
+    return;
+  }
+
+  let fullHTML = "";
+
+  for (let l of loans) {
+
+    // 🔹 Get balance
+    const balanceRes = await fetch(`${API_URL}/loan-balance/${l.id}`);
+    const balance = await balanceRes.json();
+
+    // 🔹 Get payments
+    const paymentsRes = await fetch(`${API_URL}/loan-payments/${l.id}`, {
+      headers: { "Authorization": "Bearer " + token }
+    });
+    const payments = await paymentsRes.json();
+
+    // 🔥 Payment rows
+    let paymentRows = "";
+
+    if (payments.length === 0) {
+      paymentRows = `
+        <tr>
+          <td colspan="2" style="text-align:center; color:gray;">
+            No payments yet
+          </td>
+        </tr>
+      `;
+    } else {
+      paymentRows = payments.map(p => `
+        <tr>
+          <td>${formatDate(p.payment_date)}</td>
+          <td>${p.amount}</td>
+        </tr>
+      `).join("");
+    }
+
+    // 🔥 FULL TABLE PER LOAN
+    fullHTML += `
+      <table style="
+        width:100%;
+        border-collapse: collapse;
+        margin-bottom: 40px;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+      " border="1">
+
+        <!-- 🔷 LOAN DETAILS -->
+        <tr style="background:#2c3e50; color:white;">
+          <th colspan="2">Loan Details On Date : ${formatDate(l.start_date)})</th>
+        </tr>
+
+        <tr><td style="padding:10px;">Customer</td><td>${l.name || ""} (${l.email || selectedEmail})</td></tr>
+        <tr><td style="padding:10px;">Amount Borrowed</td><td>${Number(l.amount || 0).toLocaleString()}</td></tr>
+        <tr><td style="padding:10px;">Interest</td><td>${Number(balance.interest || 0).toLocaleString()}</td></tr>
+        <tr><td style="padding:10px;">Total Owed</td><td>${Number(balance.total_owed || 0).toLocaleString()}</td></tr>
+        <tr><td style="padding:10px;">Total Paid</td><td>${Number(balance.paid || 0).toLocaleString()}</td></tr>
+        <tr><td style="padding:10px;">Remaining</td><td>${Number(balance.balance || 0).toLocaleString()}</td></tr>
+        <tr><td style="padding:10px;">Start Date</td><td>${formatDate(l.start_date)}</td></tr>
+        <tr><td style="padding:10px;">Due Date</td><td>${formatDate(l.due_date)}</td></tr>
+        <tr><td style="padding:10px;">Status</td><td>${l.status}</td></tr>
+
+        <!-- 🔷 PAYMENT HEADER -->
+        <tr style="background:#f5f5f5;">
+          <th style="padding:10px;">Date</th>
+          <th style="padding:10px;">Amount Paid</th>
+        </tr>
+
+        <!-- 🔷 PAYMENTS -->
+        ${paymentRows}
+
+        <!-- 🔷 TOTAL -->
+       <tr style=" background:#e8f5e9; font-weight:bold;">
+          <td  style="padding:10px;">Total Paid</td>
+          <td style="padding:10px;">${Number(balance.paid || 0).toFixed(2)}</td>
+        </tr>
+
+      </table>
+    `;
+  }
+
+  container.innerHTML = `
+    <div id="report" style=" padding:30px; background:#f9f9f9; border-radius:10px;">
+      <h2 style="text-align:center;">Customer Loan Report</h2>
+      <p><strong>Email:</strong> ${selectedEmail}</p>
+      <hr style="margin:30px 0;">
+      ${fullHTML}
+    </div>
+  `;
+}
+
+
+function printReport() {
+  const content = document.getElementById("report").innerHTML;
+
+  const win = window.open("", "", "width=900,height=700");
+  win.document.write(`
+    <html>
+      <head>
+        <title>Print Report</title>
+      </head>
+      <body>
+        ${content}
+      </body>
+    </html>
+  `);
+
+  win.document.close();
+  win.print();
+}
+
+
+
 function makePayment(loanId, input, balanceElement) {
   const amount = parseFloat(input.value);
 
