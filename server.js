@@ -263,7 +263,7 @@ app.post("/loans", authenticateToken, isAdmin, (req, res) => {
 });
 
 
-app.get("/my-loans", authenticateToken, (req, res) => {
+app.get("/my-loans", (req, res) => {
     const userId = req.user.id;
 
     const sql = `
@@ -490,7 +490,7 @@ function sendDailyReport() {
 
 
 
-app.get("/loans/:id/balance", authenticateToken, (req, res) => {
+app.get("/loans/:id/balance", (req, res) => {
     const loanId = req.params.id;
 
     const sql = `    
@@ -511,7 +511,7 @@ app.get("/loans/:id/balance", authenticateToken, (req, res) => {
     });
 });
 
-app.get("/customers/search", authenticateToken, (req, res) => {
+app.get("/customers/search", (req, res) => {
     const query = req.query.q;
 
     const sql = `
