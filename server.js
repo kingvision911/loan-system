@@ -39,9 +39,7 @@ app.get("/", authenticateToken, (req, res) => {
     res.send("Loan System API is running...");
 });
 
-app.listen(3000, () => {
-    console.log("Server running on port 3000");
-});
+
 
 app.get("/customers", authenticateToken, (req, res) => {
     const sql = `
@@ -573,3 +571,12 @@ cron.schedule("0 0 * * *", () => {
     sendDailyReport();
 });
 
+app.listen(3000, () => {
+    console.log("Server running on port 3000");
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
