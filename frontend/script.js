@@ -242,14 +242,90 @@ function loadCustomers() {
   })
   .then(res => res.json())
   .then(data => {
-    const list = document.getElementById("customerList");
-    list.innerHTML = "";
+
+    const container = document.getElementById("customerList");
+    container.innerHTML = "";
+
+    if (!data.length) {
+      container.innerHTML = "<p>No customers found</p>";
+      return;
+    }
+
+    let table = `
+      <table border="1" style="border-collapse: collapse; width:100%; background:white;">
+        <thead style="background:#2c3e50; color:white;">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>National ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
 
     data.forEach(c => {
-      const li = document.createElement("li");
-      li.textContent = `${c.name} - ${c.phone}`;
-      list.appendChild(li);
+      table += `
+        <tr>
+          <td>${c.name}</td>
+          <td>${c.email}</td>
+          <td>${c.phone}</td>
+          <td>${c.national_id}</td>
+          <td>
+            <button onclick="viewCustomerLoans(\`${c.email}\`)">View</button>
+            <button onclick="editCustomer(${c.id}, '${c.name}', '${c.phone}', '${c.national_id}')">Edit</button>
+            <button onclick="deleteCustomer(${c.id})">Delete</button>
+          </td>
+        </tr>
+      `;
     });
+
+    table += `</tbody></table>`;
+
+    container.innerHTML = table;
+  });
+}
+
+
+function editCustomer(id, name, phone, national_id) {
+  const newName = prompt("Edit Name", name);
+  const newPhone = prompt("Edit Phone", phone);
+  const newId = prompt("Edit National ID", national_id);
+
+  fetch(`${API_URL}/customers/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify({
+      name: newName,
+      phone: newPhone,
+      national_id: newId
+    })
+  })
+  .then(res => res.text())
+  .then(msg => {
+    alert(msg);
+    loadCustomers();
+  });
+}
+
+
+function deleteCustomer(id) {
+  if (!confirm("Are you sure you want to delete this customer?")) return;
+
+  fetch(`${API_URL}/customers/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  })
+  .then(res => res.text())
+  .then(msg => {
+    alert(msg);
+    loadCustomers();
   });
 }
 
@@ -372,13 +448,17 @@ function loadMyLoans() {
 
 
 
-async function viewCustomerLoans() {
-  if (!selectedEmail) {
+async function viewCustomerLoans(email = null) {
+
+  // ✅ Decide which email to use
+  const targetEmail = email || selectedEmail;
+
+  if (!targetEmail) {
     alert("Please select a customer first");
     return;
   }
 
-  const res = await fetch(`${API_URL}/customer-loans/${selectedEmail}`, {
+  const res = await fetch(`${API_URL}/customer-loans/${targetEmail}`, {
     headers: { "Authorization": "Bearer " + token }
   });
 
@@ -421,7 +501,7 @@ async function viewCustomerLoans() {
       paymentRows = payments.map(p => `
         <tr>
           <td>${formatDate(p.payment_date)}</td>
-          <td>${p.amount}</td>
+          <td>${Number(p.amount).toLocaleString()}</td>
         </tr>
       `).join("");
     }
@@ -439,18 +519,55 @@ async function viewCustomerLoans() {
 
         <!-- 🔷 LOAN DETAILS -->
         <tr style="background:#2c3e50; color:white;">
-          <th colspan="2">Loan Details On Date : ${formatDate(l.start_date)})</th>
+          <th colspan="2">
+            Loan Details On Date: ${formatDate(l.start_date)}
+          </th>
         </tr>
 
-        <tr><td style="padding:10px;">Customer</td><td>${l.name || ""} (${l.email || selectedEmail})</td></tr>
-        <tr><td style="padding:10px;">Amount Borrowed</td><td>${Number(l.amount || 0).toLocaleString()}</td></tr>
-        <tr><td style="padding:10px;">Interest</td><td>${Number(balance.interest || 0).toLocaleString()}</td></tr>
-        <tr><td style="padding:10px;">Total Owed</td><td>${Number(balance.total_owed || 0).toLocaleString()}</td></tr>
-        <tr><td style="padding:10px;">Total Paid</td><td>${Number(balance.paid || 0).toLocaleString()}</td></tr>
-        <tr><td style="padding:10px;">Remaining</td><td>${Number(balance.balance || 0).toLocaleString()}</td></tr>
-        <tr><td style="padding:10px;">Start Date</td><td>${formatDate(l.start_date)}</td></tr>
-        <tr><td style="padding:10px;">Due Date</td><td>${formatDate(l.due_date)}</td></tr>
-        <tr><td style="padding:10px;">Status</td><td>${l.status}</td></tr>
+        <tr>
+          <td style="padding:10px;">Customer</td>
+          <td>${l.name || ""} (${l.email || targetEmail})</td>
+        </tr>
+
+        <tr>
+          <td style="padding:10px;">Amount Borrowed</td>
+          <td>${Number(l.amount || 0).toLocaleString()}</td>
+        </tr>
+
+        <tr>
+          <td style="padding:10px;">Interest</td>
+          <td>${Number(balance.interest || 0).toLocaleString()}</td>
+        </tr>
+
+        <tr>
+          <td style="padding:10px;">Total Owed</td>
+          <td>${Number(balance.total_owed || 0).toLocaleString()}</td>
+        </tr>
+
+        <tr>
+          <td style="padding:10px;">Total Paid</td>
+          <td>${Number(balance.paid || 0).toLocaleString()}</td>
+        </tr>
+
+        <tr>
+          <td style="padding:10px;">Remaining</td>
+          <td>${Number(balance.balance || 0).toLocaleString()}</td>
+        </tr>
+
+        <tr>
+          <td style="padding:10px;">Start Date</td>
+          <td>${formatDate(l.start_date)}</td>
+        </tr>
+
+        <tr>
+          <td style="padding:10px;">Due Date</td>
+          <td>${formatDate(l.due_date)}</td>
+        </tr>
+
+        <tr>
+          <td style="padding:10px;">Status</td>
+          <td>${l.status}</td>
+        </tr>
 
         <!-- 🔷 PAYMENT HEADER -->
         <tr style="background:#f5f5f5;">
@@ -462,9 +579,11 @@ async function viewCustomerLoans() {
         ${paymentRows}
 
         <!-- 🔷 TOTAL -->
-       <tr style=" background:#e8f5e9; font-weight:bold;">
-          <td  style="padding:10px;">Total Paid</td>
-          <td style="padding:10px;">${Number(balance.paid || 0).toFixed(2)}</td>
+        <tr style="background:#e8f5e9; font-weight:bold;">
+          <td style="padding:10px;">Total Paid</td>
+          <td style="padding:10px;">
+            ${Number(balance.paid || 0).toLocaleString()}
+          </td>
         </tr>
 
       </table>
@@ -472,14 +591,15 @@ async function viewCustomerLoans() {
   }
 
   container.innerHTML = `
-    <div id="report" style=" padding:30px; background:#f9f9f9; border-radius:10px;">
+    <div id="report" style="padding:30px; background:#f9f9f9; border-radius:10px;">
       <h2 style="text-align:center;">Customer Loan Report</h2>
-      <p><strong>Email:</strong> ${selectedEmail}</p>
+      <p><strong>Email:</strong> ${targetEmail}</p>
       <hr style="margin:30px 0;">
       ${fullHTML}
     </div>
   `;
 }
+
 
 
 function printReport() {
@@ -542,19 +662,58 @@ function makePayment(loanId, input, balanceElement) {
 
 function createLoan() {
   const email = selectedEmail;
-  const amount = document.getElementById("loanAmount").value;
-  const interest_rate = document.getElementById("interest").value;
+  const amount = parseFloat(document.getElementById("loanAmount").value);
+  const interest_rate = parseFloat(document.getElementById("interest").value);
   const start_date = document.getElementById("startDate").value;
   const due_date = document.getElementById("dueDate").value;
 
+  // 🔒 VALIDATION
+
+  if (!email) {
+    alert("Please select a customer");
+    return;
+  }
+
+  if (!amount || amount <= 0) {
+    alert("Loan amount must be greater than 0");
+    return;
+  }
+
+  // Optional realistic minimum
+  if (amount < 1000) {
+    alert("Minimum loan amount is 1,000");
+    return;
+  }
+
+  if (isNaN(interest_rate) || interest_rate < 0) {
+    alert("Interest rate must be 0 or more");
+    return;
+  }
+
+  if (interest_rate > 100) {
+    alert("Interest rate is too high");
+    return;
+  }
+
+  if (!start_date || !due_date) {
+    alert("Please select start date and due date");
+    return;
+  }
+
+  if (new Date(due_date) <= new Date(start_date)) {
+    alert("Due date must be after start date");
+    return;
+  }
+
+  // 🚀 SEND REQUEST
   fetch(`${API_URL}/loans`, {
-    method: "POST", 
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": "Bearer " + token
     },
     body: JSON.stringify({
-      email, 
+      email,
       amount,
       interest_rate,
       start_date,
@@ -562,8 +721,21 @@ function createLoan() {
     })
   })
   .then(res => res.text())
-  .then(msg => alert(msg))
-  .catch(err => console.log(err));
+  .then(msg => {
+    alert(msg);
+
+    // 🧹 reset form after success
+    document.getElementById("loanAmount").value = "";
+    document.getElementById("interest").value = "";
+    document.getElementById("startDate").value = "";
+    document.getElementById("dueDate").value = "";
+    selectedEmail = "";
+    document.getElementById("loanSearch").value = "";
+  })
+  .catch(err => {
+    console.log(err);
+    alert("Error creating loan");
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
