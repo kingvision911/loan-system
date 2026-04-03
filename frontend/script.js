@@ -1,6 +1,7 @@
+
 //const API_URL = "http://localhost:3000";
 
- const API_URL = window.location.hostname === "localhost"
+const API_URL = window.location.hostname === "localhost"
    ? "http://localhost:3000"
    : "https://loan-system-59i2.onrender.com";
 
