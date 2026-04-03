@@ -16,7 +16,7 @@ app.use(express.json());
 function authenticateToken(req, res, next) {
     const authHeaders = req.headers["authorization"];
 
-    if(!authHeaders) {
+    if (!authHeaders) {
         return res.status(401).send("Access denied");
     }
 
@@ -25,10 +25,40 @@ function authenticateToken(req, res, next) {
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) return res.status(403).send("Invalid token");
 
-        req.user = user;
-        next();
+        // 🔥 CHECK STATUS HERE
+        const sql = `
+            SELECT status FROM customers WHERE user_id = ?
+        `;
+
+        db.query(sql, [user.id], (err, result) => {
+            if (err) return res.status(500).send(err);
+
+            if (result.length && result[0].status === "blocked") {
+                return res.status(403).send("Account blocked");
+            }
+
+            req.user = user;
+            next();
+        });
     });
 }
+
+
+
+function logFraudAttempt(national_id, email, req) {
+    const ip = req.ip;
+
+    const sql = `
+        INSERT INTO fraud_attempts (national_id, email, ip_address)
+        VALUES (?, ?, ?)
+    `;
+
+    db.query(sql, [national_id, email, ip], (err) => {
+        if (err) console.log("Fraud log error:", err);
+    });
+}
+
+
 
 function isAdmin(req, res, next) {
     if (req.user.role !== "admin") {
@@ -50,7 +80,8 @@ app.get("/customers", authenticateToken, (req, res) => {
     users.name,
     users.email,
     customers.phone,
-    customers.national_id
+    customers.national_id,
+    customers.status
     FROM customers
     JOIN users ON customers.user_id = users.id
     `;
@@ -62,6 +93,42 @@ app.get("/customers", authenticateToken, (req, res) => {
             res.json(result);
         }
     });
+});
+
+
+
+app.put("/customers/:id/block", authenticateToken, isAdmin, (req, res) => {
+    const customerId = req.params.id;
+
+    const sql = `
+        UPDATE customers 
+        SET status = 'blocked'
+        WHERE id = ?
+    `;
+
+    db.query(sql, [customerId], (err) => {
+        if (err) return res.status(500).send(err);
+
+        res.send("Customer blocked successfully");
+    });
+});
+
+
+
+app.put("/customers/:id/unblock", authenticateToken, isAdmin, (req, res) => {
+  const customerId = req.params.id;
+
+  const sql = `
+    UPDATE customers 
+    SET status = 'active'
+    WHERE id = ?
+  `;
+
+  db.query(sql, [customerId], (err) => {
+    if (err) return res.status(500).send(err);
+
+    res.send("Customer unblocked successfully");
+  });
 });
 
 
@@ -85,55 +152,70 @@ app.put("/customers/:id", authenticateToken, isAdmin, (req, res) => {
 });
 
 
-app.delete("/customers/:id", authenticateToken, isAdmin, (req, res) => {
-  const customerId = req.params.id;
+// app.delete("/customers/:id", authenticateToken, isAdmin, (req, res) => {
+//   const customerId = req.params.id;
 
-  const sql = "DELETE FROM customers WHERE id = ?";
+//   const sql = "DELETE FROM customers WHERE id = ?";
 
-  db.query(sql, [customerId], (err) => {
-    if (err) return res.status(500).send(err);
-    res.send("Customer deleted");
-  });
-});
+//   db.query(sql, [customerId], (err) => {
+//     if (err) return res.status(500).send(err);
+//     res.send("Customer deleted");
+//   });
+// });
 
 
 app.post("/create-user", async (req, res) => {
     const { name, email, password, phone, national_id } = req.body;
 
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // 🔒 STEP 1: Check email
+        const checkEmailSql = "SELECT * FROM users WHERE email = ?";
+        db.query(checkEmailSql, [email], async (err, emailResult) => {
+            if (err) return res.status(500).send("Database error");
 
-        // STEP 1: Create user
-        const userSql = `
-            INSERT INTO users (name, email, password, role)
-            VALUES (?, ?, ?, 'customer')
-        `;
-
-        db.query(userSql, [name, email, hashedPassword], (err, userResult) => {
-            if (err) {
-                if (err.code === "ER_DUP_ENTRY") {
-                    return res.status(400).send("User already exists");
-                }
-                return res.status(500).send("Database error");
+            if (emailResult.length > 0) {
+                return res.status(400).send("Email already exists");
             }
 
-            const userId = userResult.insertId;
+            // 🔒 STEP 2: Check national ID
+            const checkIdSql = "SELECT * FROM customers WHERE national_id = ?";
 
-            // STEP 2: Create customer linked to user
-            const customerSql = `
-                INSERT INTO customers (user_id, phone, national_id)
-                VALUES (?, ?, ?)
-            `;
+            db.query(checkIdSql, [national_id], async (err, idResult) => {
+                if (err) return res.status(500).send("Database error");
 
-            db.query(customerSql, [userId, phone, national_id], (err) => {
-                if (err) {
-                    if (err.code === "ER_DUP_ENTRY") {
-                        return res.status(400).send("User already exists");
-                    }
-                    return res.status(500).send("Database error");
+                if (idResult.length > 0) {
+
+                    // 🔥 LOG FRAUD ATTEMPT
+                    logFraudAttempt(national_id, email, req);
+
+                    return res.status(400).send("National ID already registered");
                 }
 
-                res.send("Account Created successfully!");
+                // ✅ STEP 3: Create user safely
+                const hashedPassword = await bcrypt.hash(password, 10);
+
+                const userSql = `
+                    INSERT INTO users (name, email, password, role)
+                    VALUES (?, ?, ?, 'customer')
+                `;
+
+                db.query(userSql, [name, email, hashedPassword], (err, userResult) => {
+                    if (err) return res.status(500).send("Database error");
+
+                    const userId = userResult.insertId;
+
+                    // ✅ STEP 4: Create customer
+                    const customerSql = `
+                        INSERT INTO customers (user_id, phone, national_id)
+                        VALUES (?, ?, ?)
+                    `;
+
+                    db.query(customerSql, [userId, phone, national_id], (err) => {
+                        if (err) return res.status(500).send("Database error");
+
+                        res.send("Account created successfully!");
+                    });
+                });
             });
         });
 
@@ -157,47 +239,19 @@ app.get("/check-admin", (req, res) => {
 
 
 app.post("/create-admin", async (req, res) => {
-    const { name, email, password } = req.body;
+    try {
+        const { name, email, password } = req.body;
 
-    const checkSql = "SELECT * FROM users WHERE role = 'admin'";
+        if (!name || !email || !password) {
+            return res.status(400).send("All fields are required");
+        }
 
-    db.query(checkSql, async (err, result) => {
-        if (err) return res.status(500).send(err);
+        const checkSql = "SELECT * FROM users WHERE role = 'admin'";
 
-        //  FIRST ADMIN (no auth required)
-        if (result.length === 0) {
-            const hashedPassword = await bcrypt.hash(password, 10);
+        db.query(checkSql, async (err, result) => {
+            if (err) return res.status(500).send(err);
 
-            const sql = `
-                INSERT INTO users (name, email, password, role)
-                VALUES (?, ?, ?, 'admin')
-            `;
-
-            db.query(sql, [name, email, hashedPassword], (err) => {
-                if (err) return res.status(500).send(err);
-
-                return res.send("First admin created");
-            });
-        } 
-        
-        // 🔒 AFTER FIRST ADMIN → REQUIRE TOKEN
-        else {
-            // ❗ MANUALLY CHECK TOKEN
-            const authHeader = req.headers["authorization"];
-
-            if (!authHeader) {
-                return res.status(403).send("Access denied: No token");
-            }
-
-            const token = authHeader.split(" ")[1];
-
-            jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
-                if (err) return res.status(403).send("Invalid token");
-
-                if (user.role !== "admin") {
-                    return res.status(403).send("Access denied: Admin only");
-                }
-
+            if (result.length === 0) {
                 const hashedPassword = await bcrypt.hash(password, 10);
 
                 const sql = `
@@ -207,44 +261,101 @@ app.post("/create-admin", async (req, res) => {
 
                 db.query(sql, [name, email, hashedPassword], (err) => {
                     if (err) return res.status(500).send(err);
-
-                    res.send("Admin created successfully");
+                    return res.send("First admin created");
                 });
-            });
-        }
-    });
+            } else {
+                const authHeader = req.headers["authorization"];
+
+                if (!authHeader) {
+                    return res.status(403).send("Access denied: No token");
+                }
+
+                const token = authHeader.split(" ")[1];
+
+                jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+                    if (err) return res.status(403).send("Invalid token");
+
+                    if (user.role !== "admin") {
+                        return res.status(403).send("Access denied: Admin only");
+                    }
+
+                    const hashedPassword = await bcrypt.hash(password, 10);
+
+                    const sql = `
+                        INSERT INTO users (name, email, password, role)
+                        VALUES (?, ?, ?, 'admin')
+                    `;
+
+                    db.query(sql, [name, email, hashedPassword], (err) => {
+                        if (err) return res.status(500).send(err);
+                        res.send("Admin created successfully");
+                    });
+                });
+            }
+        });
+
+    } catch (error) {
+        console.log("🔥 CREATE ADMIN ERROR:", error);
+        res.status(500).send("Server crashed");
+    }
 });
 
 
 app.post("/login", (req, res) => {
     const { email, password } = req.body;
 
-    const sql = "SELECT * FROM users WHERE email = ?";
+    const sql = `
+        SELECT users.*, customers.status
+        FROM users
+        LEFT JOIN customers ON users.id = customers.user_id
+        WHERE users.email = ?
+    `;
 
     db.query(sql, [email], async (err, result) => {
         if (err) return res.status(500).send(err);
 
+        // ✅ STEP 1: Check if user exists
         if (result.length === 0) {
-            return res.status(401).json({message: "User not found", field: "email" });
+            return res.status(401).json({
+                message: "User not found",
+                field: "email"
+            });
         }
 
+        // ✅ STEP 2: Get user AFTER checking result
         const user = result[0];
 
+        // ✅ STEP 3: Check password exists
         if (!user.password) {
-            return res.status(500).json({ message: "User password missing in the DB"})
+            return res.status(500).json({
+                message: "User password missing in DB"
+            });
         }
+
+        // ✅ STEP 4: Compare password
         const match = await bcrypt.compare(password, user.password);
 
         if (!match) {
-            return res.status(401).json({message: "Wrong password", field: "password" });
+            return res.status(401).json({
+                message: "Wrong password",
+                field: "password"
+            });
         }
 
-    const token = jwt.sign(
-        { id: user.id, role: user.role, name: user.name },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d"}
-    );
+        // 🔥 STEP 5: Check if BLOCKED (AFTER password check)
+        if (user.role === "customer" && user.status === "blocked") {
+            return res.status(403).json({
+                message: "Account is blocked",
+                field: "email"
+            });
+        }
 
+        // ✅ STEP 6: Generate token
+        const token = jwt.sign(
+            { id: user.id, role: user.role, name: user.name },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
 
         res.json({ token });
     });
@@ -268,7 +379,11 @@ app.post("/loans", authenticateToken, isAdmin, (req, res) => {
         const userId = userResult[0].id;
 
         // Step 2: find customer by user_id
-        const customerSql = "SELECT id FROM customers WHERE user_id = ?";
+        const customerSql = `
+            SELECT id, status 
+            FROM customers 
+            WHERE user_id = ?
+        `;
 
         db.query(customerSql, [userId], (err, customerResult) => {
             if (err) return res.status(500).send(err);
@@ -277,7 +392,18 @@ app.post("/loans", authenticateToken, isAdmin, (req, res) => {
                 return res.status(404).send("Customer record not found");
             }
 
-            const customerId = customerResult[0].id;
+            const customer = customerResult[0];
+
+            // 🚫 BLOCKED CHECK
+            if (customer.status === "blocked") {
+                return res.status(403).send("User is blocked or suspended");
+            }
+
+            const customerId = customer.id;
+
+            // Step 3 continues...
+
+            
 
             // Step 3: create loan
             const loanSql = `

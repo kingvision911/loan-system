@@ -1,8 +1,8 @@
-// const API_URL = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 
-const API_URL = window.location.hostname === "localhost"
-  ? "http://localhost:3000"
-  : "https://loan-system-59i2.onrender.com";
+// const API_URL = window.location.hostname === "localhost"
+//   ? "http://localhost:3000"
+//   : "https://loan-system-59i2.onrender.com";
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -266,16 +266,27 @@ function loadCustomers() {
     `;
 
     data.forEach(c => {
+
+      const isBlocked = c.status === "blocked";
+
       table += `
-        <tr>
-          <td>${c.name}</td>
+        <tr style="${isBlocked ? 'background-color:#ffe6e6; color:red;' : ''}">
+          <td style="font-weight:${isBlocked ? 'bold' : 'normal'}">
+          ${c.name}
+        </td>
           <td>${c.email}</td>
           <td>${c.phone}</td>
           <td>${c.national_id}</td>
           <td>
             <button onclick="viewCustomerLoans(\`${c.email}\`)">View</button>
             <button onclick="editCustomer(${c.id}, '${c.name}', '${c.phone}', '${c.national_id}')">Edit</button>
-            <button onclick="deleteCustomer(${c.id})">Delete</button>
+            
+            ${
+              isBlocked
+                ? `<button onclick="unblockCustomer(${c.id})">Unblock</button>`
+                : `<button onclick="blockCustomer(${c.id})">Block</button>`
+            }
+
           </td>
         </tr>
       `;
@@ -313,11 +324,11 @@ function editCustomer(id, name, phone, national_id) {
 }
 
 
-function deleteCustomer(id) {
-  if (!confirm("Are you sure you want to delete this customer?")) return;
+function blockCustomer(id) {
+  if (!confirm("Block this customer?")) return;
 
-  fetch(`${API_URL}/customers/${id}`, {
-    method: "DELETE",
+  fetch(`${API_URL}/customers/${id}/block`, {
+    method: "PUT",
     headers: {
       "Authorization": "Bearer " + token
     }
@@ -329,6 +340,22 @@ function deleteCustomer(id) {
   });
 }
 
+
+function unblockCustomer(id) {
+  if (!confirm("Unblock this customer?")) return;
+
+  fetch(`${API_URL}/customers/${id}/unblock`, {
+    method: "PUT",
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  })
+  .then(res => res.text())
+  .then(msg => {
+    alert(msg);
+    loadCustomers();
+  });
+}
 
 
 function loadMyLoans() {
@@ -732,11 +759,22 @@ function createLoan() {
     selectedEmail = "";
     document.getElementById("loanSearch").value = "";
   })
+  .then(res => {
+    if (!res.ok) {
+      return res.text().then(msg => { throw new Error(msg); });
+    }
+    return res.text();
+  })
+  .then(msg => {
+    alert(msg);
+  })
   .catch(err => {
-    console.log(err);
-    alert("Error creating loan");
+    console.log(err.message);
   });
+
 }
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("email").addEventListener("input", () => {
