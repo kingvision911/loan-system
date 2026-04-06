@@ -1,13 +1,7 @@
 
 //const API_URL = "http://localhost:3000";
 
-<<<<<<< HEAD
-const API_URL = window.location.hostname === "localhost"
-   ? "http://localhost:3000"
-   : "https://loan-system-59i2.onrender.com";
-=======
 const API_URL = "https://loan-system-59i2.onrender.com";
->>>>>>> 4d3fb1a (Styling the entire page with css)
 
 
 document.addEventListener("DOMContentLoaded", () => {
