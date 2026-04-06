@@ -6,93 +6,121 @@
 </head>
 <body>
 
-  <h1>Loan System</h1>
+  <div class="app-container">
 
-  <!-- LOGIN -->
-  <div id="login">
-    <h2>Login</h2>
-    <input type="email" id="email" placeholder="Email"><br>
-    <input type="password" id="password" placeholder="Password"><br>
-    <button onclick="login()">Login</button>
-    <!-- Create account button -->
-    <button onclick="showRegister()">Create Account</button>
-    <p id="loginError" style="color: red; margin-top: 8px;"></p>
-  </div>
-  <div id="register" style="display:none;">
-    <input id="userName" placeholder="Name"><br>
-    <input id="userEmail" placeholder="Email"><br>
-    <input id="userPassword" placeholder="Password" type="password"><br>
-    <input id="userPhone" placeholder="Phone"><br>
-    <input id="userNationalId" placeholder="National ID"><br>
-    <button onclick="createUser()">Register</button>
+    <!-- HEADER -->
+    <header class="topbar">
+      <h1 class="logo">Loan System</h1>
+    </header>
 
-    <!-- set admin button -->
-     
-    <button id="setupAdminBtn" onclick="createAdmin()" style="display:none;">
-      Setup Admin Account
-    </button>
-    <!-- <button onclick="createAdmin()">Create Admin</button> -->
-  </div>
+    <!-- LOGIN -->
+    <div id="login" class="card auth-card">
+      <h2>Login</h2>
 
+      <div class="form-group">
+        <input type="email" id="email" placeholder="Email">
+      </div>
 
-<!-- Admin panel -->
+      <div class="form-group">
+        <input type="password" id="password" placeholder="Password">
+      </div>
 
+      <div class="btn-group">
+        <button onclick="login()" class="btn primary">Login</button>
+        <button onclick="showRegister()" class="btn ghost">Create Account</button>
+      </div>
 
-<div id="adminPanel" style="display: none;">
-    <h2>Admin Dashboard</h2>
-
-    <h3 id="welcomeText"></h3>
-    <button onclick="logout()">Logout</button>
-
-    <button onclick="loadCustomers()">Load Customers</button>
-    <button id="createAdminBtn" onclick="createAdmin()">Create Admin</button>
-
-    <ul id="customerList"></ul>
-    <div id="customerHistory"></div>
-
-    <h3>Create Loan</h3>
-  
-    <div class="search-box">
-      <input type="text" id="loanSearch" placeholder="Search customer by name or email">
-      <ul id="searchResults"></ul>
+      <p id="loginError" class="error-text"></p>
     </div>
 
-    <label for="loanAmount">Amount: </label>
-    <input type="number" id="loanAmount" placeholder="50000">
+    <!-- REGISTER -->
+    <div id="register" class="card auth-card" style="display:none;">
+      <h2>Create Account</h2>
 
-    <label for="interest">Interest %: </label>
-    <input type="number" id="interest" placeholder="30">
+      <div class="form-grid">
+        <input id="userName" placeholder="Name">
+        <input id="userEmail" placeholder="Email">
+        <input id="userPassword" type="password" placeholder="Password">
+        <input id="passwordCheck" type="password" placeholder="Retype Password">
+        <input id="userPhone" placeholder="Phone">
+        <input id="userNationalId" placeholder="National ID">
+      </div>
 
-    <label for="Start Date">Start Date: </label>
-    <input type="date" id="startDate">
+      <button onclick="createUser()" class="btn primary full">Register</button>
 
-    <label for="dueDate">Due Date: </label>
-    <input type="date" id="dueDate">
+      <button id="setupAdminBtn" onclick="createAdmin()" class="btn warning full" style="display:none;">
+        Setup Admin Account
+      </button>
+    </div>
 
-    <button onclick="createLoan()">Create Loan</button>
+    <!-- ADMIN PANEL -->
+    <div id="adminPanel" class="dashboard" style="display: none;">
+      
+      <div class="dashboard-header">
+        <h2>Admin Dashboard</h2>
+        <div>
+          <button onclick="logout()" class="btn danger">Logout</button>
+          <button id="createAdminBtn" onclick="createAdmin()" class="btn danger">Create Admin</button>
+        </div>
+      </div>
 
-    <button onclick="viewCustomerLoans()">View Customer History</button>
-    <button onclick="printReport()">Print Report</button>
+      <h3 id="welcomeText" class="welcome-text"></h3>
 
-    <div id="customerLoans"></div>
-</div>
+      <div class="action-bar">
+        <button onclick="loadCustomers()" class="btn primary">View Customers</button>
+      </div>
 
+      <!-- CREATE LOAN -->
+      <div class="card section-card">
+        <h3>Create Loan</h3>
 
-<!-- cusomers panel -->
+        <div class="search-box">
+          <input type="text" id="loanSearch" placeholder="Search customer by name or email">
+          <ul id="searchResults"></ul>
+        </div>
 
+        <div class="form-grid">
+          <input type="number" id="loanAmount" placeholder="Amount">
+          <input type="number" id="interest" placeholder="Interest %">
+          <input type="date" id="startDate">
+          <input type="date" id="dueDate">
+        </div>
 
-<div id="customerPanel" style="display: none;">
-    <h2>Customer Dashboard</h2>
+        <button onclick="createLoan()" class="btn success full">Create Loan</button>
+      </div>
 
-    <h3 id="welcomeUser"></h3>
-    <button onclick="logout()">Logout</button>
+      <!-- ACTIONS -->
+      <div class="action-bar">
+        <button onclick="viewCustomerLoans()" class="btn primary">View Customer Records</button>
+        <button onclick="printReport()" class="btn secondary">Print Report</button>
+      </div>
 
-    <!-- <p>Welcome! You can view your loans and payments.</p> -->
+      <!-- DATA -->
+      <div class="data-grid">
+        <ul id="customerList" class="data-box"></ul>
+        <!-- <div id="customerHistory" class="data-box"></div> -->
+      </div>
 
-    <button onclick="loadMyLoans()">View My Loans</button>
-    <div id="myLoans"></div>
-    <ul id="loanList"></ul>
-</div>
+      <div id="customerLoans" class="data-box full"></div>
+    </div>
+
+    <!-- CUSTOMER PANEL -->
+    <div id="customerPanel" class="dashboard" style="display: none;">
+
+      <div class="dashboard-header">
+        <h2>Customer Dashboard</h2>
+        <button onclick="logout()" class="btn danger">Logout</button>
+      </div>
+
+      <h3 id="welcomeUser" class="welcome-text"></h3>
+
+      <button onclick="loadMyLoans()" class="btn primary">View My Loans</button>
+
+      <div id="myLoans" class="data-box"></div>
+      <ul id="loanList" class="data-box"></ul>
+    </div>
+
+  </div>
 
 <script src="script.js"></script>
 </body>

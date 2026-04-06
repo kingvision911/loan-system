@@ -1,62 +1,10 @@
-body {
-  font-family: Arial;
-  padding: 20px;
-  background: #f4f4f4;
+* {
+  box-sizing: border-box;
 }
 
-input {
-  margin: 5px;
-  padding: 8px;
-}
-
-button {
-  padding: 8px 12px;
-  margin: 5px;
-  cursor: pointer;
-}
-
-#dashboard {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-}
-
-.search-box {
-  position: relative;
-  width: 300px;
-}
-
-#searchResults {
-  position: absolute;
-  top: calc(100% - 1px); /* 👈 KEY FIX */
-  left: 0;
-  width: 100%;
-  background: white;
-  border: 1px solid #ccc;
-  border-top: none; 
-  border-bottom: none;
-  max-height: 150px;
-  overflow-y: auto;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  z-index: 1000;
-}
-
-#searchResults li {
-  padding: 8px;
-  cursor: pointer;
-}
 
 #searchResults li:hover {
-  background: #f0f0f0;
-}
-
-#loanSearch {
-  border: 1px solid #ccc;
-  padding: 8px;
-  width: 100%;
-  box-sizing: border-box;
+  background: #d6d5d5;
 }
 
 table {
@@ -79,4 +27,187 @@ th {
 
 tr {
   border-bottom: 1px solid #ddd;
+}
+
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f4f7fb;
+}
+
+/* Layout */
+.app-container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+}
+
+/* Topbar */
+.topbar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  color: #2c3e50;
+}
+
+/* Cards */
+.card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+
+.auth-card {
+  max-width: 400px;
+  margin: auto;
+}
+
+/* Dashboard */
+.dashboard {
+  margin-top: 20px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.welcome-text {
+  color: #777;
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+input:focus {
+  border-color: #2d89ef;
+  outline: none;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 5px;
+  color: white;
+  transition: 0.2s;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Colors */
+.primary { background: #2d89ef; }
+.secondary { background: #6c757d; }
+.success { background: #27ae60; }
+.danger { background: #e74c3c; }
+.warning { background: #f39c12; }
+.ghost { background: transparent; color: #2d89ef; border: 1px solid #2d89ef; }
+
+.full {
+  margin: 20px 5px 0px 0px;
+  width: 100%;
+}
+
+/* Actions */
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  margin: 15px 0;
+  
+}
+
+/* Data */
+.data-box {
+  background: #fafafa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  margin-top: 10px;
+}
+
+
+.full {
+  width: 100%;
+}
+
+/* Search */
+.search-box {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+#searchResults {
+  position: absolute;
+  width: 100%;
+  background: white;
+  border: 0px 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  border-radius: 6px;
+}
+
+#searchResults li {
+  list-style-type: none;
+  background-color: #f4f7fb;
+  padding: 10px;
+  cursor: pointer;
+}
+
+#searchResults li:hover {
+  background: #f0f0f0;
+}
+
+.pay-btn {
+  font-weight: bold;
+  width: 100px;
+  margin-top: 15px;
+  padding: 12px 14px;
+  border-radius: 10px;
+}
+
+.pay-btn:hover {
+  transform: scale(1.05);
+}
+
+/* Error */
+.error-text {
+  color: red;
+  font-size: 14px;
 }

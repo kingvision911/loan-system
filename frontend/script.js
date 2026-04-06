@@ -1,9 +1,13 @@
 
 //const API_URL = "http://localhost:3000";
 
+<<<<<<< HEAD
 const API_URL = window.location.hostname === "localhost"
    ? "http://localhost:3000"
    : "https://loan-system-59i2.onrender.com";
+=======
+const API_URL = "https://loan-system-59i2.onrender.com";
+>>>>>>> 4d3fb1a (Styling the entire page with css)
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -279,13 +283,13 @@ function loadCustomers() {
           <td>${c.phone}</td>
           <td>${c.national_id}</td>
           <td>
-            <button onclick="viewCustomerLoans(\`${c.email}\`)">View</button>
-            <button onclick="editCustomer(${c.id}, '${c.name}', '${c.phone}', '${c.national_id}')">Edit</button>
+            <button class="btn primary" onclick="viewCustomerLoans(\`${c.email}\`)">View</button>
+            <button class="btn primary" onclick="editCustomer(${c.id}, '${c.name}', '${c.phone}', '${c.national_id}')">Edit</button>
             
             ${
               isBlocked
-                ? `<button onclick="unblockCustomer(${c.id})">Unblock</button>`
-                : `<button onclick="blockCustomer(${c.id})">Block</button>`
+                ? `<button class="btn primary" onclick="unblockCustomer(${c.id})">Unblock</button>`
+                : `<button class="btn primary" onclick="blockCustomer(${c.id})">Block</button>`
             }
 
           </td>
@@ -412,6 +416,8 @@ function loadMyLoans() {
       // Payment button
       const payBtn = document.createElement("button");
       payBtn.textContent = "Pay";
+      payBtn.classList.add("btn", "success", "pay-btn");
+      
 
       const status = document.createElement("p");
 
@@ -432,22 +438,59 @@ function loadMyLoans() {
           input.max = data.balance;
         }
    
+        div.innerHTML = `
+          <div style="
+            border:1px solid #ddd;
+            border-radius:10px;
+            padding:15px;
+            margin-bottom:15px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.05);
+            background:#fff;
+          ">
+            <table style="width:100%; border-collapse:collapse;">
+              <tr>
+                <td><strong>Amount</strong></td>
+                <td>${l.amount}</td>
+              </tr>
+              <tr>
+                <td><strong>Interest</strong></td>
+                <td>${data.interest}</td>
+              </tr>
+              <tr>
+                <td><strong>Total Owed</strong></td>
+                <td>${data.total_owed}</td>
+              </tr>
+              <tr>
+                <td><strong>Paid</strong></td>
+                <td>${data.paid}</td>
+              </tr>
+              <tr>
+                <td><strong>Remaining Balance</strong></td>
+                <td style="color:${data.balance > 0 ? 'red' : 'green'}; font-weight:bold;">
+                  ${data.balance}
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Status</strong></td>
+                <td>${l.status}</td>
+              </tr>
+              <tr>
+                <td><strong>Borrowed On</strong></td>
+                <td>${formatDate(l.start_date)}</td>
+              </tr>
+              <tr>
+                <td><strong>Due Date</strong></td>
+                <td>${formatDate(l.due_date)}</td>
+              </tr>
+            </table>
 
-            div.innerHTML = `
-            <p><strong>Amount:</strong> ${l.amount}</p>
-            <p><strong>Interest:</strong> ${data.interest}</p>
-            <p><strong>Total owed:</strong> ${data.total_owed}</p>
-            <p><strong>Paid:</strong> ${data.paid} </p>
-            <p><strong>Remaining Balance:</strong> ${data.balance}</p>
-            <p><strong>Status:</strong> ${l.status}</p>
-            <p><strong>Borrowed On:</strong> ${formatDate(l.start_date)}</p>
-            <p><strong>Due Date:</strong> ${formatDate(l.due_date)}</p>
-            <p><strong>${paid}</strong></p>
-            <hr>`;
+            <div style="margin-top:10px; font-weight:bold;">
+              ${paid}
+            </div>
+          </div>
+        `;
 
-          balanceText.textContent = `
-          Balance To Be Paid: ${data.balance}
-          `;
+        balanceText.textContent = `Balance To Be Paid: ${data.balance}`;
 
       });
 
